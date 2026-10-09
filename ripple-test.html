@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ezis — ripple test</title>
+<style>
+:root{color-scheme:light}*{box-sizing:border-box}body{margin:0;background:#f5f5ef;color:#171717;font-family:Arial,Helvetica,sans-serif}main{min-height:100svh;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(24px,5vw,70px)}header,footer{display:flex;justify-content:space-between;gap:16px;font-size:12px;letter-spacing:.06em}.center{width:100%;text-align:center}.stage{width:min(100%,1000px);margin:0 auto 30px;position:relative;touch-action:pan-y}.stage canvas,.stage img{width:100%;height:auto;display:block}.stage canvas{aspect-ratio:2048/965;touch-action:none;cursor:crosshair}.stage img{display:none}.subtitle{font-size:clamp(14px,2vw,20px);letter-spacing:.12em;text-transform:uppercase}.message{font-size:15px;margin-top:55px;line-height:1.8}.hint{font-size:11px;letter-spacing:.07em;opacity:.55;margin-top:12px}@media(prefers-reduced-motion:reduce){.hint{display:none}}
+</style>
+</head>
+<body><main>
+<header><span>20.09.2026</span><span>06:13 — EARTH</span></header>
+<section class="center"><div class="stage" id="stage"><canvas id="canvas" aria-label="Ezis, interactief golvend naambeeld"></canvas><img id="fallback" src="./ezis.png" alt="Ezis"></div><div class="subtitle">Entering the World</div><div class="message">The world,<br>slightly rearranged.</div><div class="hint">MOVE / TOUCH THE NAME</div></section>
+<footer><span>GUNST VAN DAELE</span><span>A NEW PRESENCE<br>EST. 2026</span></footer>
+</main>
+<script>
+(()=>{
+const canvas=document.getElementById('canvas'),img=document.getElementById('fallback'),hint=document.querySelector('.hint');
+const fallback=()=>{canvas.style.display='none';img.style.display='block';hint.textContent='STATIC PREVIEW';};
+if(matchMedia('(prefers-reduced-motion: reduce)').matches){fallback();return;}
+const gl=canvas.getContext('webgl',{alpha:true,premultipliedAlpha:false,antialias:true});if(!gl){fallback();return;}
+const vertex=`attribute vec2 position;varying vec2 uv;void main(){uv=(position+1.0)*0.5;gl_Position=vec4(position,0.0,1.0);}`;
+const fragment=`precision highp float;varying vec2 uv;uniform sampler2D tex;uniform vec2 center;uniform float elapsed;uniform float active;uniform float aspect;
+void main(){vec2 delta=(uv-center)*vec2(aspect,1.0);float d=length(delta);float wave=sin(55.0*d-11.0*elapsed)*exp(-11.0*d)*exp(-1.9*elapsed)*active;vec2 direction=normalize(delta+vec2(0.00001));vec2 displaced=uv-direction*wave*0.028/vec2(aspect,1.0);gl_FragColor=texture2D(tex,clamp(displaced,0.0,1.0));}`;
+function shader(type,src){let s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s;}
+let program;try{program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,vertex));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,fragment));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error('Shader linking failed');}catch(e){fallback();return;}
+gl.useProgram(program);let buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);let p=gl.getAttribLocation(program,'position');gl.enableVertexAttribArray(p);gl.vertexAttribPointer(p,2,gl.FLOAT,false,0,0);
+const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+const uCenter=gl.getUniformLocation(program,'center'),uElapsed=gl.getUniformLocation(program,'elapsed'),uActive=gl.getUniformLocation(program,'active'),uAspect=gl.getUniformLocation(program,'aspect');
+let image=new Image();image.onload=()=>{canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;gl.viewport(0,0,canvas.width,canvas.height);gl.bindTexture(gl.TEXTURE_2D,tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);requestAnimationFrame(draw);};image.onerror=fallback;image.src='./ezis.png';
+let center=[.5,.5],start=-100,active=0;const touch=(e)=>{let r=canvas.getBoundingClientRect();center=[(e.clientX-r.left)/r.width,1-(e.clientY-r.top)/r.height];start=performance.now()/1000;active=1;};canvas.addEventListener('pointerdown',touch);canvas.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&e.buttons===0){if(performance.now()/1000-start>.25)touch(e);}else if(e.buttons)touch(e);});
+function draw(now){let elapsed=Math.max(0,now/1000-start);gl.uniform2f(uCenter,center[0],center[1]);gl.uniform1f(uElapsed,elapsed);gl.uniform1f(uActive,active);gl.uniform1f(uAspect,canvas.width/canvas.height);gl.drawArrays(gl.TRIANGLES,0,6);requestAnimationFrame(draw);}
+})();
+</script></body></html>
