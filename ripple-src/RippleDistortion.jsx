@@ -95,7 +95,7 @@ vec2 coverUV(vec2 uv) {
 void main() {
   float amount = texture2D(uDisplacement, vUv).r;
   vec2 base = coverUV(vUv);
-
+  vec3 background = vec3(245.0, 245.0, 239.0) / 255.0;
   float theta = amount * uSwirl * TAU;
   vec2 dir = vec2(sin(theta), cos(theta));
   vec2 push = dir * amount * uStrength;
@@ -107,9 +107,15 @@ void main() {
     color.g = texture2D(uTexture, base + push).g;
     color.b = texture2D(uTexture, base + push * (1.0 - split)).b;
 } else {
-  vec4 pixel = texture2D(uTexture, base + push);
-  vec3 background = vec3(245.0, 245.0, 239.0) / 255.0;
-  color = mix(background, pixel.rgb, pixel.a);
+  vec2 sampleUV = base + push;
+
+  if (sampleUV.x < 0.0 || sampleUV.x > 1.0 ||
+      sampleUV.y < 0.0 || sampleUV.y > 1.0) {
+    color = background;
+  } else {
+    vec4 pixel = texture2D(uTexture, sampleUV);
+    color = mix(background, pixel.rgb, pixel.a);
+  }
 }
 
   if (uGrayscale > 0.001) {
