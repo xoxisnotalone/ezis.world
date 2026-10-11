@@ -106,9 +106,11 @@ void main() {
     color.r = texture2D(uTexture, base + push * (1.0 + split)).r;
     color.g = texture2D(uTexture, base + push).g;
     color.b = texture2D(uTexture, base + push * (1.0 - split)).b;
-  } else {
-    color = texture2D(uTexture, base + push).rgb;
-  }
+} else {
+  vec4 pixel = texture2D(uTexture, base + push);
+  vec3 background = vec3(245.0, 245.0, 239.0) / 255.0;
+  color = mix(background, pixel.rgb, pixel.a);
+}
 
   if (uGrayscale > 0.001) {
     color = mix(color, vec3(dot(color, vec3(0.2126, 0.7152, 0.0722))), uGrayscale);
