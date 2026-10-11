@@ -87,7 +87,7 @@ const float TAU = 6.283185307179586;
 vec2 coverUV(vec2 uv) {
   vec2 safe = max(uTextureSize, vec2(1.0));
   vec2 s = uResolution / safe;
-  vec2 scaledSize = safe * max(s.x, s.y);
+  vec2 scaledSize = safe * max(s.x, s.y) * 0.82;
   vec2 offset = (uResolution - scaledSize) * 0.5;
   return (uv * uResolution - offset) / scaledSize;
 }
