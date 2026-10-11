@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Renderer, Program, Mesh, Geometry, Triangle, Texture, RenderTarget } from 'ogl';
 import './RippleDistortion.css';
 
